@@ -7,9 +7,11 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.PermissionChecker;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,6 +26,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.io.File;
+import java.io.FileWriter;
+
 public class MainActivity extends AppCompatActivity {
 
     private GoogleMap map;
@@ -32,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     TextView tvLatitude, tvLongitude;
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallBack;
+
+    String folderLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,12 +94,38 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},0);
         }
 
+
+
+        //Folder creation for Internal Storage
+        folderLocation = getFilesDir().getAbsolutePath() + "/MyFolder";
+        File folder = new File(folderLocation);
+        if (folder.exists() == false){
+            boolean result = folder.mkdir();
+            if (result = true){
+                Log.d("File Read/Write", "Folder created");
+            }
+        }
+
+
         btnGetLocationUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (checkPermission() == true){
 //                    Toast.makeText(MainActivity.this, "Check permission successfully", Toast.LENGTH_SHORT).show();
                     client.requestLocationUpdates(mLocationRequest, mLocationCallBack, null);
+                    if (folder.exists() == true){
+                        try {
+                            folderLocation = getFilesDir().getAbsolutePath() + "/MyFolder";
+                            File targetFile_I = new File(folderLocation, "data.txt");
+                            FileWriter writer_I = new FileWriter(targetFile_I, true);
+                            writer_I.write(mLocationCallBack+"");
+                            writer_I.flush();
+                            writer_I.close();
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Failed to write!", Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+                    }
                 }else {
                     Toast.makeText(MainActivity.this, "Check Permission failed", Toast.LENGTH_SHORT).show();
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},0);
@@ -105,6 +138,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 client.removeLocationUpdates(mLocationCallBack);
                 Toast.makeText(MainActivity.this, "Remove Location Update Successfully", Toast.LENGTH_SHORT).show();
+            }
+        });
+        btnCheckRecords.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(MainActivity.this, CheckRecords.class);
+                startActivity(i);
             }
         });
     }
